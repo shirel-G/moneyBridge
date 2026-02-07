@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-banking-blue: #007AFF;
+  --color-banking-bg: #F5F5F7;
+  --font-sans: 'Inter', 'Heebo', 'Noto Sans Arabic', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-banking-bg text-gray-900 overflow-hidden;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Custom Scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
