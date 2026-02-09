@@ -30,10 +30,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
     }, [i18n.language]);
 
     return (
-        <div className="min-h-screen h-screen bg-banking-bg flex justify-center font-sans text-gray-900 overflow-hidden">
-            <div className="w-full max-w-md bg-white h-screen shadow-2xl relative flex flex-col overflow-hidden">
+        <div className="min-h-screen bg-banking-bg flex justify-center font-sans text-gray-900" style={{ height: '100dvh', overflow: 'hidden' }}>
+            <div className="w-full max-w-md bg-white shadow-2xl relative flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
                 {/* Header */}
-                <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100/50 pt-safe-top transition-all">
+                <header
+                    className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100/50 transition-all"
+                    style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+                >
                     <div className="h-14 flex items-center justify-between px-4">
                         <div className="flex items-center gap-3">
                             {onBack && (
