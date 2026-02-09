@@ -128,7 +128,18 @@ const resources = {
             "year": "Year",
             "your_sale_price": "Your Sale Price",
             "price_above_market": "Price is above market average",
-            "price_below_market": "Price is below market average"
+            "price_below_market": "Price is below market average",
+            // Financing
+            "financing_title": "Financing Offers",
+            "financing_subtitle": "Get personalized financing options",
+            "monthly_payment": "Monthly Payment",
+            "interest_rate": "Annual Interest",
+            "num_payments": "Number of Payments",
+            "total_amount": "Total Amount",
+            "skip_financing": "Skip Financing",
+            "choose_offer": "Choose Offer",
+            "approval_high": "High Approval Chance",
+            "approval_medium": "Medium Approval Chance"
         }
     },
     he: {
@@ -257,7 +268,18 @@ const resources = {
             "year": "שנת ייצור",
             "your_sale_price": "מחיר המכירה שלך",
             "price_above_market": "המחיר מעל הממוצע בשוק",
-            "price_below_market": "המחיר מתחת לממוצע בשוק"
+            "price_below_market": "המחיר מתחת לממוצע בשוק",
+            // Financing
+            "financing_title": "הצעות מימון",
+            "financing_subtitle": "קבל הצעות מימון מותאמות אישית",
+            "monthly_payment": "תשלום חודשי",
+            "interest_rate": "ריבית שנתית",
+            "num_payments": "מספר תשלומים",
+            "total_amount": "סכום כולל",
+            "skip_financing": "דלג על מימון",
+            "choose_offer": "בחר הצעה",
+            "approval_high": "סיכוי גבוה לאישור",
+            "approval_medium": "סיכוי בינוני לאישור"
         }
     },
     ru: {

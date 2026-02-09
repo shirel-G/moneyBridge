@@ -6,9 +6,9 @@ export type TransactionStep =
     | 'VEHICLE_LOOKUP'
     | 'SELLER_DETAILS'
     | 'BUYER_DETAILS'
-    | 'BANK_SELECTION'
     | 'DEPOSIT_INSTRUCTIONS'
     | 'PAYMENT_SIMULATION'
+    | 'FINANCING_OFFERS'
     | 'INSURANCE_OFFERS'
     | 'OWNERSHIP_TRANSFER'
     | 'COMPLETE';
@@ -47,19 +47,26 @@ export const useTransaction = () => {
     }
 
     const setBuyerDetails = (details: any) => {
-        setState(prev => ({ ...prev, buyerDetails: details, step: 'BANK_SELECTION' }));
+        // Extract bank info from buyer details (since they provide it in the form)
+        const userBank: BankDetails = {
+            id: details.bankName,
+            name: details.bankName,
+            code: '',
+            icon: ''
+        };
+        setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'DEPOSIT_INSTRUCTIONS' }));
     }
-
-    const setBank = (bank: BankDetails) => {
-        setState(prev => ({ ...prev, userBank: bank, step: 'DEPOSIT_INSTRUCTIONS' }));
-    };
 
     const startPayment = () => {
         setState(prev => ({ ...prev, step: 'PAYMENT_SIMULATION' }));
     };
 
     const completePayment = () => {
-        setState(prev => ({ ...prev, paymentVerified: true, step: 'INSURANCE_OFFERS' }));
+        setState(prev => ({ ...prev, paymentVerified: true, step: 'FINANCING_OFFERS' }));
+    };
+
+    const skipFinancing = () => {
+        setState(prev => ({ ...prev, step: 'INSURANCE_OFFERS' }));
     };
 
     const skipInsurance = () => {
@@ -89,9 +96,9 @@ export const useTransaction = () => {
         setVehicle,
         setSellerDetails,
         setBuyerDetails,
-        setBank,
         startPayment,
         completePayment,
+        skipFinancing,
         skipInsurance,
         completeOwnershipTransfer,
         reset

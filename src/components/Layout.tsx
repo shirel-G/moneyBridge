@@ -63,7 +63,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
 
                 {/* Scrollable Content */}
                 <main className={twMerge(
-                    "flex-1 overflow-y-auto overflow-x-hidden p-5 pb-40", // More bottom padding for safe scrolling
+                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 pb-48", // Increased padding + min-h-0 for flex
                     "space-y-6",
                     "overscroll-contain" // Prevent scroll bleeding
                 )}>
@@ -74,9 +74,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
                 {actionButton && (
                     <div className="fixed bottom-0 w-full max-w-md z-50 pointer-events-none">
                         {/* Gradient Fade for Safe Area */}
-                        <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-white via-white/95 to-transparent" />
+                        <div className="absolute bottom-0 w-full h-36 bg-gradient-to-t from-white via-white/98 to-transparent" />
 
-                        <div className="absolute bottom- safe-pb w-full px-5 pb-8 pointer-events-auto">
+                        <div className="absolute bottom-0 w-full px-5 pb-6 pointer-events-auto" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
                             {actionButton}
                         </div>
                     </div>

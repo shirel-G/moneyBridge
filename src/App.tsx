@@ -1,9 +1,9 @@
 import { Layout } from './components/Layout';
 import { VehicleForm } from './components/VehicleForm';
 import { UserDetailsForm } from './components/UserDetailsForm';
-import { BankSelector } from './components/BankSelector';
 import { EscrowDetails } from './components/EscrowDetails';
 import { PaymentSimulator } from './components/PaymentSimulator';
+import { FinancingOffers } from './components/FinancingOffers';
 import { InsuranceOffers } from './components/InsuranceOffers';
 import { OwnershipTransfer } from './components/OwnershipTransfer';
 import { useTransaction } from './hooks/useTransaction';
@@ -17,9 +17,9 @@ function App() {
     setVehicle,
     setSellerDetails,
     setBuyerDetails,
-    setBank,
     startPayment,
     completePayment,
+    skipFinancing,
     skipInsurance,
     completeOwnershipTransfer,
     reset,
@@ -39,8 +39,8 @@ function App() {
       case 'VEHICLE_LOOKUP': return t('welcome');
       case 'SELLER_DETAILS': return t('setup_seller');
       case 'BUYER_DETAILS': return t('setup_buyer');
-      case 'BANK_SELECTION': return t('select_bank');
       case 'DEPOSIT_INSTRUCTIONS': return t('deposit_title');
+      case 'FINANCING_OFFERS': return t('financing_title');
       case 'INSURANCE_OFFERS': return t('insurance_title');
       case 'OWNERSHIP_TRANSFER': return t('ownership_transfer');
       case 'COMPLETE': return "Success"; // Maybe translate this too if key exists, or leave as universal
@@ -99,10 +99,6 @@ function App() {
         <UserDetailsForm role="BUYER" onSubmit={setBuyerDetails} />
       )}
 
-      {state.step === 'BANK_SELECTION' && (
-        <BankSelector onSelect={setBank} selectedBankId={state.userBank?.id} />
-      )}
-
       {state.step === 'DEPOSIT_INSTRUCTIONS' && state.userBank && (
         <div className="space-y-6">
           <EscrowDetails userBank={state.userBank} price={state.price} onDetect={startPayment} />
@@ -111,6 +107,10 @@ function App() {
 
       {state.step === 'PAYMENT_SIMULATION' && (
         <PaymentSimulator onComplete={completePayment} />
+      )}
+
+      {state.step === 'FINANCING_OFFERS' && (
+        <FinancingOffers vehiclePrice={state.price} onContinue={skipFinancing} onSkip={skipFinancing} />
       )}
 
       {state.step === 'INSURANCE_OFFERS' && (
