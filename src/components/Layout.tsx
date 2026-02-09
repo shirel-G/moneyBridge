@@ -30,8 +30,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
     }, [i18n.language]);
 
     return (
-        <div className="min-h-screen bg-banking-bg flex justify-center font-sans text-gray-900" style={{ height: '100dvh', overflow: 'hidden' }}>
-            <div className="w-full max-w-md bg-white shadow-2xl relative flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+        <div className="min-h-screen bg-banking-bg flex justify-center font-sans text-gray-900" style={{ height: '100dvh', overflow: 'hidden', paddingTop: '64px' }}>
+            <div className="w-full max-w-md bg-white shadow-2xl relative flex flex-col" style={{ height: '100%', overflow: 'hidden' }}>
                 {/* Header */}
                 <header
                     className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100/50 transition-all"
@@ -66,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
 
                 {/* Scrollable Content */}
                 <main className={twMerge(
-                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 pb-48", // Increased padding + min-h-0 for flex
+                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 pb-48 pt-2",
                     "space-y-6",
                     "overscroll-contain" // Prevent scroll bleeding
                 )}>
