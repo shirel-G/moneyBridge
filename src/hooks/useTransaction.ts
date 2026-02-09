@@ -54,7 +54,7 @@ export const useTransaction = () => {
             code: '',
             icon: ''
         };
-        setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'DEPOSIT_INSTRUCTIONS' }));
+        setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'FINANCING_OFFERS' }));
     }
 
     const startPayment = () => {
@@ -62,11 +62,11 @@ export const useTransaction = () => {
     };
 
     const completePayment = () => {
-        setState(prev => ({ ...prev, paymentVerified: true, step: 'FINANCING_OFFERS' }));
+        setState(prev => ({ ...prev, paymentVerified: true, step: 'INSURANCE_OFFERS' }));
     };
 
     const skipFinancing = () => {
-        setState(prev => ({ ...prev, step: 'INSURANCE_OFFERS' }));
+        setState(prev => ({ ...prev, step: 'DEPOSIT_INSTRUCTIONS' }));
     };
 
     const skipInsurance = () => {
