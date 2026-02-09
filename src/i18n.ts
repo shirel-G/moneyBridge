@@ -113,7 +113,22 @@ const resources = {
             "longitude": "Longitude", "summit": "Summit", "st_line": "ST-Line", "titanium": "Titanium", "gs_line": "GS Line",
             "ultimate": "Ultimate", "recharge": "Recharge", "inscription": "Inscription", "momentum": "Momentum",
             "xdrive30i": "xDrive30i", "msport": "M Sport", "amg_line": "AMG Line", "avantgarde": "Avantgarde",
-            "homura": "Homura"
+            "homura": "Homura",
+            // Vehicle Valuation
+            "owner_count": "Number of Owners",
+            "hand": "Hand",
+            "mileage": "Mileage",
+            "calculating_price": "Calculating market price...",
+            "market_price": "Market Price",
+            "levi_yitzchak_style": "Price Guide",
+            "min_price": "Minimum",
+            "max_price": "Maximum",
+            "recommended": "Recommended",
+            "price_based_on": "Based on",
+            "year": "Year",
+            "your_sale_price": "Your Sale Price",
+            "price_above_market": "Price is above market average",
+            "price_below_market": "Price is below market average"
         }
     },
     he: {
@@ -227,7 +242,22 @@ const resources = {
             "longitude": "לונגיטיוד", "summit": "סאמיט", "st_line": "ST-Line", "titanium": "טיטניום", "gs_line": "GS Line",
             "ultimate": "אלטימט", "recharge": "רצ׳ארג׳", "inscription": "אינסקריפשן", "momentum": "מומנטום",
             "xdrive30i": "xDrive30i", "msport": "M ספורט", "amg_line": "AMG Line", "avantgarde": "אוונגרד",
-            "homura": "הומורה"
+            "homura": "הומורה",
+            // Vehicle Valuation
+            "owner_count": "כמה בעלים היו לרכב?",
+            "hand": "יד",
+            "mileage": "קילומטראז׳",
+            "calculating_price": "מחשב מחיר מחירון...",
+            "market_price": "מחיר מחירון",
+            "levi_yitzchak_style": "לפי לוי יצחק",
+            "min_price": "מינימום",
+            "max_price": "מקסימום",
+            "recommended": "מומלץ",
+            "price_based_on": "מבוסס על",
+            "year": "שנת ייצור",
+            "your_sale_price": "מחיר המכירה שלך",
+            "price_above_market": "המחיר מעל הממוצע בשוק",
+            "price_below_market": "המחיר מתחת לממוצע בשוק"
         }
     },
     ru: {
