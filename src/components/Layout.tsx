@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, ArrowLeft } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -12,6 +12,14 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, onBack }) => {
     const { i18n } = useTranslation();
+    const mainContentRef = useRef<HTMLDivElement>(null);
+
+    // Scroll to top whenever children change (new screen)
+    useEffect(() => {
+        if (mainContentRef.current) {
+            mainContentRef.current.scrollTop = 0;
+        }
+    }, [children]);
 
     const toggleLanguage = () => {
         const langs = ['en', 'he', 'ru', 'ar'];
@@ -30,7 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
     }, [i18n.language]);
 
     return (
-        <div className="min-h-screen bg-banking-bg flex justify-center font-sans text-gray-900" style={{ height: '100dvh', overflow: 'hidden', paddingTop: '64px' }}>
+        <div className="min-h-screen bg-banking-bg flex justify-center font-sans text-gray-900" style={{ height: '100dvh', overflow: 'hidden', paddingTop: '48px' }}>
             <div className="w-full max-w-md bg-white shadow-2xl relative flex flex-col" style={{ height: '100%', overflow: 'hidden' }}>
                 {/* Header */}
                 <header
@@ -65,11 +73,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, actionButton, o
                 </header>
 
                 {/* Scrollable Content */}
-                <main className={twMerge(
-                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 pb-48 pt-2",
-                    "space-y-6",
-                    "overscroll-contain" // Prevent scroll bleeding
-                )}>
+                <main
+                    ref={mainContentRef}
+                    className={twMerge(
+                        "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 pb-48 pt-2",
+                        "space-y-6",
+                        "overscroll-contain" // Prevent scroll bleeding
+                    )}
+                >
                     {children}
                 </main>
 
