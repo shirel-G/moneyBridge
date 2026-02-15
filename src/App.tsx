@@ -18,8 +18,11 @@ import { OwnershipTransfer } from './components/OwnershipTransfer';
 import { ConsentScreen } from './components/ConsentScreen';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfService } from './components/TermsOfService';
+import { DataAccessPage } from './components/DataAccessPage';
+import { ComplaintForm } from './components/ComplaintForm';
+import { DigitalReceipt } from './components/DigitalReceipt';
 import { useTransaction } from './hooks/useTransaction';
-import { CheckCircle2, MessageSquare } from 'lucide-react';
+import { CheckCircle2, MessageSquare, Shield, FileText, Database, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 
@@ -33,6 +36,10 @@ function App() {
   });
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showDataAccess, setShowDataAccess] = useState(false);
+  const [showComplaint, setShowComplaint] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Buyer phone verification state (local to App — stored once, reused)
   const [buyerPhoneInput, setBuyerPhoneInput] = useState('');
@@ -145,6 +152,40 @@ function App() {
     return (
       <Layout title={t('tos_title')}>
         <TermsOfService onBack={() => setShowTerms(false)} />
+      </Layout>
+    );
+  }
+
+  // ===== Data Access Page Overlay =====
+  if (showDataAccess) {
+    return (
+      <Layout title={t('data_access_title')}>
+        <DataAccessPage onBack={() => setShowDataAccess(false)} />
+      </Layout>
+    );
+  }
+
+  // ===== Complaint Form Overlay =====
+  if (showComplaint) {
+    return (
+      <Layout title={t('complaint_title')}>
+        <ComplaintForm onBack={() => setShowComplaint(false)} />
+      </Layout>
+    );
+  }
+
+  // ===== Digital Receipt Overlay =====
+  if (showReceipt && state.vehicle) {
+    return (
+      <Layout title={t('receipt_title')}>
+        <DigitalReceipt
+          transactionData={{
+            vehicle: state.vehicle,
+            price: state.price,
+            role: state.role as 'BUYER' | 'SELLER',
+          }}
+          onBack={() => setShowReceipt(false)}
+        />
       </Layout>
     );
   }
@@ -406,6 +447,83 @@ function App() {
                 </span>
               </div>
             </div>
+          )}
+          {/* Download Receipt Button */}
+          <button
+            onClick={() => setShowReceipt(true)}
+            className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <FileText className="w-4 h-4" />
+            {t('receipt_download')}
+          </button>
+        </div>
+      )}
+
+      {/* ===== FOOTER LINKS ===== */}
+      {state.step === 'ROLE_SELECT' && (
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setShowPrivacy(true)}
+              className="flex items-center gap-2 p-3 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+              {t('menu_privacy')}
+            </button>
+            <button
+              onClick={() => setShowTerms(true)}
+              className="flex items-center gap-2 p-3 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              {t('menu_terms')}
+            </button>
+            <button
+              onClick={() => setShowDataAccess(true)}
+              className="flex items-center gap-2 p-3 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <Database className="w-4 h-4" />
+              {t('menu_data')}
+            </button>
+            <button
+              onClick={() => setShowComplaint(true)}
+              className="flex items-center gap-2 p-3 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              {t('menu_complaint')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CANCEL TRANSACTION BUTTON ===== */}
+      {state.step !== 'ROLE_SELECT' && state.step !== 'COMPLETE' && (
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          {showCancelConfirm ? (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-3">
+              <p className="text-sm font-semibold text-red-900">{t('cancel_confirm_title')}</p>
+              <p className="text-xs text-red-700">{t('cancel_confirm_desc')}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowCancelConfirm(false); handleBack(); }}
+                  className="flex-1 py-2 rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-colors"
+                >
+                  {t('cancel_yes')}
+                </button>
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors"
+                >
+                  {t('cancel_no')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="w-full text-center text-sm text-red-500 hover:text-red-600 py-2 transition-colors"
+            >
+              {t('cancel_transaction')}
+            </button>
           )}
         </div>
       )}
