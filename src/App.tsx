@@ -15,6 +15,9 @@ import { EscrowDetails } from './components/EscrowDetails';
 import { PaymentSimulator } from './components/PaymentSimulator';
 import { FinancingOffers } from './components/FinancingOffers';
 import { OwnershipTransfer } from './components/OwnershipTransfer';
+import { ConsentScreen } from './components/ConsentScreen';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
 import { useTransaction } from './hooks/useTransaction';
 import { CheckCircle2, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +25,14 @@ import { clsx } from 'clsx';
 
 function App() {
   const { t } = useTranslation();
+
+  // Consent state — must be accepted before any data collection
+  const [hasConsent, setHasConsent] = useState(() => {
+    const saved = localStorage.getItem('mb_consent');
+    return saved ? JSON.parse(saved).granted === true : false;
+  });
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   // Buyer phone verification state (local to App — stored once, reused)
   const [buyerPhoneInput, setBuyerPhoneInput] = useState('');
@@ -119,6 +130,37 @@ function App() {
         return null;
     }
   };
+
+  // ===== Privacy Policy Overlay =====
+  if (showPrivacy) {
+    return (
+      <Layout title={t('privacy_title')}>
+        <PrivacyPolicy onBack={() => setShowPrivacy(false)} />
+      </Layout>
+    );
+  }
+
+  // ===== Terms of Service Overlay =====
+  if (showTerms) {
+    return (
+      <Layout title={t('tos_title')}>
+        <TermsOfService onBack={() => setShowTerms(false)} />
+      </Layout>
+    );
+  }
+
+  // ===== Consent Screen — shown before any data collection =====
+  if (!hasConsent) {
+    return (
+      <Layout title={t('consent_title')}>
+        <ConsentScreen
+          onAccept={() => setHasConsent(true)}
+          onViewPrivacy={() => setShowPrivacy(true)}
+          onViewTerms={() => setShowTerms(true)}
+        />
+      </Layout>
+    );
+  }
 
   return (
     <Layout

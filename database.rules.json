@@ -1,0 +1,39 @@
+{
+    "rules": {
+        "sellers": {
+            "$phone": {
+                ".read": true,
+                ".write": "!data.exists() || data.child('phone').val() === $phone",
+                ".validate": "newData.hasChildren(['phone', 'idNumber', 'name']) && newData.child('phone').isString() && newData.child('idNumber').isString() && newData.child('name').isString()"
+            }
+        },
+        "requests": {
+            "$requestId": {
+                ".read": true,
+                ".write": true,
+                ".validate": "newData.hasChildren(['buyerPhone', 'sellerPhone', 'status'])",
+                "status": {
+                    ".validate": "newData.val() === 'pending' || newData.val() === 'approved' || newData.val() === 'price_set' || newData.val() === 'price_confirmed' || newData.val() === 'paid' || newData.val() === 'transferred' || newData.val() === 'completed' || newData.val() === 'rejected'"
+                },
+                "agreedPrice": {
+                    ".validate": "newData.isNumber() && newData.val() > 0"
+                },
+                "paymentComplete": {
+                    ".validate": "newData.isBoolean()"
+                },
+                "transferComplete": {
+                    ".validate": "newData.isBoolean()"
+                }
+            }
+        },
+        "audit_logs": {
+            ".read": false,
+            "$logId": {
+                ".write": "!data.exists()",
+                ".validate": "newData.hasChildren(['action', 'timestamp', 'actor']) && newData.child('action').isString() && newData.child('actor').hasChildren(['role'])"
+            }
+        },
+        ".read": false,
+        ".write": false
+    }
+}
