@@ -13,12 +13,18 @@ import { FinancingOffers } from './components/FinancingOffers';
 import { InsuranceOffers } from './components/InsuranceOffers';
 import { OwnershipTransfer } from './components/OwnershipTransfer';
 import { useTransaction } from './hooks/useTransaction';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { clsx } from 'clsx';
 
 function App() {
   const { t } = useTranslation();
+
+  // Buyer phone verification state
   const [buyerPhone, setBuyerPhone] = useState('');
+  const [buyerPhoneInput, setBuyerPhoneInput] = useState('');
+  const [showBuyerOtp, setShowBuyerOtp] = useState(false);
+  const [buyerOtp, setBuyerOtp] = useState('');
 
   const {
     state,
@@ -56,8 +62,30 @@ function App() {
   };
 
   const handleBack = () => {
-    // Simple back navigation
+    // Reset to beginning
+    setBuyerPhone('');
+    setBuyerPhoneInput('');
+    setShowBuyerOtp(false);
+    setBuyerOtp('');
     reset();
+  };
+
+  // Handle buyer phone OTP flow
+  const handleBuyerPhoneSendCode = () => {
+    if (buyerPhoneInput.length >= 10) {
+      setShowBuyerOtp(true);
+    }
+  };
+
+  const handleBuyerOtpChange = (value: string) => {
+    const clean = value.replace(/\D/g, '').slice(0, 4);
+    setBuyerOtp(clean);
+    if (clean.length === 4) {
+      // OTP verified — set the phone and proceed
+      setTimeout(() => {
+        setBuyerPhone(buyerPhoneInput);
+      }, 500);
+    }
   };
 
   const renderActionButton = () => {
@@ -74,7 +102,7 @@ function App() {
       case 'COMPLETE':
         return (
           <button
-            onClick={reset}
+            onClick={handleBack}
             className="w-full bg-gray-100 text-gray-900 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
           >
             {t('start_new')}
@@ -131,29 +159,77 @@ function App() {
             </div>
           )}
 
-          {/* Phone input for buyer */}
+          {/* Buyer phone + OTP verification */}
           {!buyerPhone ? (
-            <div className="space-y-4">
-              <div className="text-center space-y-2 mb-4">
-                <h2 className="text-xl font-bold text-gray-900">{t('enter_your_phone')}</h2>
-                <p className="text-sm text-gray-500">{t('buyer_phone_desc')}</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('phone_number')}</label>
-                <input
-                  type="tel"
-                  id="buyer-phone-input"
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
-                  placeholder="050-1234567"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val.length >= 10) {
-                      setBuyerPhone(val);
-                    }
-                  }}
-                />
-              </div>
-            </div>
+            <>
+              {!showBuyerOtp ? (
+                <div className="space-y-4">
+                  <div className="text-center space-y-2 mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">{t('enter_your_phone')}</h2>
+                    <p className="text-sm text-gray-500">{t('buyer_phone_desc')}</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('phone_number')}</label>
+                    <input
+                      type="tel"
+                      id="buyer-phone-input"
+                      value={buyerPhoneInput}
+                      onChange={(e) => setBuyerPhoneInput(e.target.value)}
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                      placeholder="050-1234567"
+                    />
+                  </div>
+                  <button
+                    onClick={handleBuyerPhoneSendCode}
+                    disabled={buyerPhoneInput.length < 10}
+                    className={clsx(
+                      "w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg active:scale-95",
+                      buyerPhoneInput.length >= 10
+                        ? "bg-banking-blue text-white shadow-blue-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                    )}
+                  >
+                    {t('verify_phone')}
+                  </button>
+                </div>
+              ) : (
+                /* OTP Verification Screen */
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center space-y-6">
+                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600 mb-4">
+                    <MessageSquare className="w-8 h-8" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('enter_verification_code')}</h2>
+                    <p className="text-gray-500">
+                      {t('code_sent_to')} <span className="font-semibold text-gray-900">{buyerPhoneInput}</span>
+                    </p>
+                  </div>
+
+                  <div className="relative">
+                    <div className="flex justify-center gap-3 my-6">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="w-12 h-14 border-2 rounded-xl flex items-center justify-center text-2xl font-bold border-gray-200 bg-gray-50 text-gray-900">
+                          {buyerOtp[i] || ''}
+                        </div>
+                      ))}
+                    </div>
+
+                    <input
+                      type="tel"
+                      autoFocus
+                      value={buyerOtp}
+                      onChange={(e) => handleBuyerOtpChange(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      maxLength={4}
+                      placeholder="____"
+                    />
+                  </div>
+
+                  <p className="text-sm text-gray-400">{t('enter_any_code')}</p>
+                </div>
+              )}
+            </>
           ) : (
             <BuyerSellerLink
               onSubmit={(sellerPhone, sellerIdNumber) => {

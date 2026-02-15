@@ -2,7 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Inbox, Car, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { transactionStore, type TransactionRequest } from '../services/transactionStore';
+import {
+    subscribeToSellerRequests,
+    approveRequest,
+    rejectRequest,
+    type TransactionRequest,
+} from '../services/transactionStore';
 
 interface SellerRequestsProps {
     sellerPhone: string;
@@ -19,31 +24,23 @@ export const SellerRequests: React.FC<SellerRequestsProps> = ({
     const [requests, setRequests] = useState<TransactionRequest[]>([]);
 
     useEffect(() => {
-        const update = () => {
-            const reqs = transactionStore.getRequestsForSeller(sellerPhone, sellerIdNumber);
-            setRequests([...reqs]);
-        };
+        // Real-time Firebase listener — fires instantly when buyer creates a request
+        const unsubscribe = subscribeToSellerRequests(sellerPhone, sellerIdNumber, (reqs) => {
+            setRequests(reqs);
+        });
 
-        update(); // initial load
-
-        const interval = setInterval(update, 1000);
-        const unsub = transactionStore.subscribe(update);
-
-        return () => {
-            clearInterval(interval);
-            unsub();
-        };
+        return () => unsubscribe();
     }, [sellerPhone, sellerIdNumber]);
 
     const pendingRequests = requests.filter((r) => r.status === 'pending');
 
-    const handleApprove = (req: TransactionRequest) => {
-        transactionStore.approveRequest(req.id);
-        onApprove(req);
+    const handleApprove = async (req: TransactionRequest) => {
+        await approveRequest(req.id);
+        onApprove({ ...req, status: 'approved' });
     };
 
-    const handleReject = (req: TransactionRequest) => {
-        transactionStore.rejectRequest(req.id);
+    const handleReject = async (req: TransactionRequest) => {
+        await rejectRequest(req.id);
     };
 
     const formatPrice = (num: number) => num.toLocaleString('he-IL');

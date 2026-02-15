@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
 import type { VehicleDetails, BankDetails } from '../services/mockServices';
-import { transactionStore, type TransactionRequest } from '../services/transactionStore';
+import {
+    createRequest,
+    registerSeller as firebaseRegisterSeller,
+    type TransactionRequest,
+} from '../services/transactionStore';
 
 export type TransactionStep =
     | 'ROLE_SELECT'
@@ -83,15 +87,15 @@ export const useTransaction = () => {
             pricing,
             ownerCount,
             mileage,
-            price: pricing.avgPrice, // Use recommended price
+            price: pricing.avgPrice,
             step: 'BUYER_ENTER_SELLER',
         }));
     };
 
-    const submitSellerLink = (sellerPhone: string, sellerIdNumber: string, buyerPhone: string) => {
+    const submitSellerLink = async (sellerPhone: string, sellerIdNumber: string, buyerPhone: string) => {
         if (!state.vehicle || !state.pricing) return;
 
-        const request = transactionStore.createRequest({
+        const request = await createRequest({
             buyerPhone,
             buyerName: buyerPhone,
             sellerPhone,
@@ -119,8 +123,8 @@ export const useTransaction = () => {
     }, []);
 
     // --- Seller Flow ---
-    const registerSeller = (phone: string, idNumber: string) => {
-        transactionStore.registerSeller(phone, idNumber);
+    const registerSeller = async (phone: string, idNumber: string) => {
+        await firebaseRegisterSeller(phone, idNumber);
         setState(prev => ({
             ...prev,
             sellerPhone: phone,
@@ -136,7 +140,7 @@ export const useTransaction = () => {
             vehicle: request.vehicle,
             pricing: request.pricing,
             price: request.pricing.avgPrice,
-            step: 'COMPLETE', // Seller's flow ends at approval (or could continue to a final screen)
+            step: 'COMPLETE',
         }));
     };
 

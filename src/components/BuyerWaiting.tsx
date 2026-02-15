@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { transactionStore, type TransactionRequest } from '../services/transactionStore';
+import { subscribeToRequest, type TransactionRequest } from '../services/transactionStore';
 
 interface BuyerWaitingProps {
     requestId: string;
@@ -14,28 +14,16 @@ export const BuyerWaiting: React.FC<BuyerWaitingProps> = ({ requestId, onApprove
     const [approved, setApproved] = useState(false);
 
     useEffect(() => {
-        const checkStatus = () => {
-            const req = transactionStore.getRequestById(requestId);
-            if (req && req.status === 'approved') {
+        // Real-time Firebase listener — fires instantly when seller approves
+        const unsubscribe = subscribeToRequest(requestId, (req) => {
+            if (req && req.status === 'approved' && !approved) {
                 setApproved(true);
                 setTimeout(() => onApproved(req), 1500);
             }
-        };
+        });
 
-        // Check immediately
-        checkStatus();
-
-        // Poll every second
-        const interval = setInterval(checkStatus, 1000);
-
-        // Also subscribe to store changes
-        const unsub = transactionStore.subscribe(checkStatus);
-
-        return () => {
-            clearInterval(interval);
-            unsub();
-        };
-    }, [requestId, onApproved]);
+        return () => unsubscribe();
+    }, [requestId, onApproved, approved]);
 
     return (
         <div className="flex flex-col items-center justify-center py-12 space-y-8 text-center">

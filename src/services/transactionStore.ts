@@ -1,8 +1,21 @@
 /**
- * In-memory transaction store that simulates a backend.
- * Allows buyer and seller flows to share state via pub/sub.
+ * Firebase-backed transaction store for real-time cross-device communication.
+ * Replaces the previous in-memory store.
  */
 
+import { database } from './firebaseConfig';
+import {
+    ref,
+    set,
+    get,
+    update,
+    push,
+    onValue,
+    query,
+    orderByChild,
+    equalTo,
+    type Unsubscribe,
+} from 'firebase/database';
 import type { VehicleDetails } from './mockServices';
 
 export interface SellerProfile {
@@ -25,82 +38,92 @@ export interface TransactionRequest {
     createdAt: number;
 }
 
-type Listener = () => void;
+// --- Seller Registration ---
 
-class TransactionStore {
-    private sellers: Map<string, SellerProfile> = new Map();
-    private requests: TransactionRequest[] = [];
-    private listeners: Set<Listener> = new Set();
-
-    // --- Seller Registration ---
-
-    registerSeller(phone: string, idNumber: string): SellerProfile {
-        const key = this.sellerKey(phone, idNumber);
-        const profile: SellerProfile = { phone, idNumber, registeredAt: Date.now() };
-        this.sellers.set(key, profile);
-        this.notify();
-        return profile;
-    }
-
-    isSellerRegistered(phone: string, idNumber: string): boolean {
-        return this.sellers.has(this.sellerKey(phone, idNumber));
-    }
-
-    // --- Transaction Requests ---
-
-    createRequest(req: Omit<TransactionRequest, 'id' | 'status' | 'createdAt'>): TransactionRequest {
-        const request: TransactionRequest = {
-            ...req,
-            id: `REQ-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            status: 'pending',
-            createdAt: Date.now(),
-        };
-        this.requests.push(request);
-        this.notify();
-        return request;
-    }
-
-    getRequestsForSeller(phone: string, idNumber: string): TransactionRequest[] {
-        return this.requests.filter(
-            (r) => r.sellerPhone === phone && r.sellerIdNumber === idNumber
-        );
-    }
-
-    getRequestById(id: string): TransactionRequest | undefined {
-        return this.requests.find((r) => r.id === id);
-    }
-
-    approveRequest(id: string): void {
-        const req = this.requests.find((r) => r.id === id);
-        if (req) {
-            req.status = 'approved';
-            this.notify();
-        }
-    }
-
-    rejectRequest(id: string): void {
-        const req = this.requests.find((r) => r.id === id);
-        if (req) {
-            req.status = 'rejected';
-            this.notify();
-        }
-    }
-
-    // --- Pub/Sub ---
-
-    subscribe(listener: Listener): () => void {
-        this.listeners.add(listener);
-        return () => this.listeners.delete(listener);
-    }
-
-    private notify() {
-        this.listeners.forEach((fn) => fn());
-    }
-
-    private sellerKey(phone: string, idNumber: string): string {
-        return `${phone}::${idNumber}`;
-    }
+export async function registerSeller(phone: string, idNumber: string): Promise<SellerProfile> {
+    const key = `${phone}_${idNumber}`;
+    const profile: SellerProfile = { phone, idNumber, registeredAt: Date.now() };
+    await set(ref(database, `sellers/${key}`), profile);
+    return profile;
 }
 
-// Singleton instance
-export const transactionStore = new TransactionStore();
+export async function isSellerRegistered(phone: string, idNumber: string): Promise<boolean> {
+    const key = `${phone}_${idNumber}`;
+    const snapshot = await get(ref(database, `sellers/${key}`));
+    return snapshot.exists();
+}
+
+// --- Transaction Requests ---
+
+export async function createRequest(
+    req: Omit<TransactionRequest, 'id' | 'status' | 'createdAt'>
+): Promise<TransactionRequest> {
+    const requestsRef = ref(database, 'requests');
+    const newRef = push(requestsRef);
+    const request: TransactionRequest = {
+        ...req,
+        id: newRef.key!,
+        status: 'pending',
+        createdAt: Date.now(),
+    };
+    await set(newRef, request);
+    return request;
+}
+
+export async function approveRequest(id: string): Promise<void> {
+    await update(ref(database, `requests/${id}`), { status: 'approved' });
+}
+
+export async function rejectRequest(id: string): Promise<void> {
+    await update(ref(database, `requests/${id}`), { status: 'rejected' });
+}
+
+// --- Real-Time Listeners ---
+
+/**
+ * Subscribe to a single request by ID. Returns unsubscribe function.
+ */
+export function subscribeToRequest(
+    requestId: string,
+    callback: (request: TransactionRequest | null) => void
+): Unsubscribe {
+    const requestRef = ref(database, `requests/${requestId}`);
+    return onValue(requestRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.val() as TransactionRequest);
+        } else {
+            callback(null);
+        }
+    });
+}
+
+/**
+ * Subscribe to all requests for a specific seller (by phone + ID).
+ * Uses a composite index field for querying.
+ */
+export function subscribeToSellerRequests(
+    sellerPhone: string,
+    sellerIdNumber: string,
+    callback: (requests: TransactionRequest[]) => void
+): Unsubscribe {
+    // We query by sellerPhone and then filter by sellerIdNumber client-side
+    // because Firebase RTDB only supports single-field queries.
+    const requestsRef = query(
+        ref(database, 'requests'),
+        orderByChild('sellerPhone'),
+        equalTo(sellerPhone)
+    );
+
+    return onValue(requestsRef, (snapshot) => {
+        const requests: TransactionRequest[] = [];
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                const req = child.val() as TransactionRequest;
+                if (req.sellerIdNumber === sellerIdNumber) {
+                    requests.push(req);
+                }
+            });
+        }
+        callback(requests);
+    });
+}

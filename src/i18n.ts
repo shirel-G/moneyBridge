@@ -172,7 +172,8 @@ const resources = {
             "approve": "Approve",
             "reject": "Reject",
             "seller_done_title": "Request Approved!",
-            "seller_done_msg": "You've approved the buyer's request. The transaction can proceed."
+            "seller_done_msg": "You've approved the buyer's request. The transaction can proceed.",
+            "verify_phone": "Verify Phone Number"
         }
     },
     he: {
@@ -345,7 +346,8 @@ const resources = {
             "approve": "אישור",
             "reject": "דחייה",
             "seller_done_title": "הבקשה אושרה!",
-            "seller_done_msg": "אישרת את בקשת הקונה. העסקה יכולה להמשיך."
+            "seller_done_msg": "אישרת את בקשת הקונה. העסקה יכולה להמשיך.",
+            "verify_phone": "אימות מספר טלפון"
         }
     },
     ru: {
@@ -455,7 +457,8 @@ const resources = {
             "approve": "Одобрить",
             "reject": "Отклонить",
             "seller_done_title": "Запрос одобрен!",
-            "seller_done_msg": "Вы одобрили запрос покупателя."
+            "seller_done_msg": "Вы одобрили запрос покупателя.",
+            "verify_phone": "Подтвердить номер телефона"
         }
     },
     ar: {
@@ -565,7 +568,8 @@ const resources = {
             "approve": "موافقة",
             "reject": "رفض",
             "seller_done_title": "تمت الموافقة!",
-            "seller_done_msg": "لقد وافقت على طلب المشتري."
+            "seller_done_msg": "لقد وافقت على طلب المشتري.",
+            "verify_phone": "تحقق من رقم الهاتف"
         }
     }
 };
