@@ -1,53 +1,147 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { VehicleDetails, BankDetails } from '../services/mockServices';
+import { transactionStore, type TransactionRequest } from '../services/transactionStore';
 
 export type TransactionStep =
-    | 'SETUP'
-    | 'VEHICLE_LOOKUP'
-    | 'SELLER_DETAILS'
+    | 'ROLE_SELECT'
+    // Buyer steps
+    | 'BUYER_VEHICLE_LOOKUP'
+    | 'BUYER_ENTER_SELLER'
+    | 'BUYER_WAITING_APPROVAL'
     | 'BUYER_DETAILS'
+    // Seller steps
+    | 'SELLER_REGISTER'
+    | 'SELLER_PENDING_REQUESTS'
+    // Shared steps (after approval)
+    | 'FINANCING_OFFERS'
     | 'DEPOSIT_INSTRUCTIONS'
     | 'PAYMENT_SIMULATION'
-    | 'FINANCING_OFFERS'
     | 'INSURANCE_OFFERS'
     | 'OWNERSHIP_TRANSFER'
     | 'COMPLETE';
 
 interface TransactionState {
     step: TransactionStep;
-    role: 'BUYER' | 'SELLER';
+    role: 'BUYER' | 'SELLER' | null;
     vehicle: VehicleDetails | null;
+    pricing: { minPrice: number; maxPrice: number; avgPrice: number } | null;
+    ownerCount: number;
+    mileage: number;
     price: number;
     userBank: BankDetails | null;
     buyerDetails: any | null;
     sellerDetails: any | null;
     paymentVerified: boolean;
     ownershipTransferVerified: boolean;
+    // Seller-side state
+    sellerPhone: string;
+    sellerIdNumber: string;
+    // Request tracking
+    currentRequestId: string | null;
+    approvedRequest: TransactionRequest | null;
 }
 
 export const useTransaction = () => {
     const [state, setState] = useState<TransactionState>({
-        step: 'VEHICLE_LOOKUP',
-        role: 'BUYER', // Defaulting to buyer for this demo
+        step: 'ROLE_SELECT',
+        role: null,
         vehicle: null,
+        pricing: null,
+        ownerCount: 0,
+        mileage: 0,
         price: 0,
-        userBank: null, // This is the bank selected for payment (Buyer's source)
+        userBank: null,
         buyerDetails: null,
-        sellerDetails: null, // Includes target bank account
+        sellerDetails: null,
         paymentVerified: false,
         ownershipTransferVerified: false,
+        sellerPhone: '',
+        sellerIdNumber: '',
+        currentRequestId: null,
+        approvedRequest: null,
     });
 
-    const setVehicle = (vehicle: VehicleDetails, price: number) => {
-        setState(prev => ({ ...prev, vehicle, price, step: 'SELLER_DETAILS' }));
+    // --- Role Selection ---
+    const selectRole = (role: 'BUYER' | 'SELLER') => {
+        setState(prev => ({
+            ...prev,
+            role,
+            step: role === 'BUYER' ? 'BUYER_VEHICLE_LOOKUP' : 'SELLER_REGISTER',
+        }));
     };
 
-    const setSellerDetails = (details: any) => {
-        setState(prev => ({ ...prev, sellerDetails: details, step: 'BUYER_DETAILS' }));
-    }
+    // --- Buyer Flow ---
+    const setVehicleForBuyer = (
+        vehicle: VehicleDetails,
+        pricing: { minPrice: number; maxPrice: number; avgPrice: number },
+        ownerCount: number,
+        mileage: number
+    ) => {
+        setState(prev => ({
+            ...prev,
+            vehicle,
+            pricing,
+            ownerCount,
+            mileage,
+            price: pricing.avgPrice, // Use recommended price
+            step: 'BUYER_ENTER_SELLER',
+        }));
+    };
 
+    const submitSellerLink = (sellerPhone: string, sellerIdNumber: string, buyerPhone: string) => {
+        if (!state.vehicle || !state.pricing) return;
+
+        const request = transactionStore.createRequest({
+            buyerPhone,
+            buyerName: buyerPhone,
+            sellerPhone,
+            sellerIdNumber,
+            vehicle: state.vehicle,
+            pricing: state.pricing,
+            ownerCount: state.ownerCount,
+            mileage: state.mileage,
+        });
+
+        setState(prev => ({
+            ...prev,
+            currentRequestId: request.id,
+            step: 'BUYER_WAITING_APPROVAL',
+        }));
+    };
+
+    const onBuyerApproved = useCallback((request: TransactionRequest) => {
+        setState(prev => ({
+            ...prev,
+            approvedRequest: request,
+            price: request.pricing.avgPrice,
+            step: 'BUYER_DETAILS',
+        }));
+    }, []);
+
+    // --- Seller Flow ---
+    const registerSeller = (phone: string, idNumber: string) => {
+        transactionStore.registerSeller(phone, idNumber);
+        setState(prev => ({
+            ...prev,
+            sellerPhone: phone,
+            sellerIdNumber: idNumber,
+            step: 'SELLER_PENDING_REQUESTS',
+        }));
+    };
+
+    const sellerApproveRequest = (request: TransactionRequest) => {
+        setState(prev => ({
+            ...prev,
+            approvedRequest: request,
+            vehicle: request.vehicle,
+            pricing: request.pricing,
+            price: request.pricing.avgPrice,
+            step: 'COMPLETE', // Seller's flow ends at approval (or could continue to a final screen)
+        }));
+    };
+
+    // --- Existing Shared Steps ---
     const setBuyerDetails = (details: any) => {
-        // Extract bank info from buyer details (since they provide it in the form)
         const userBank: BankDetails = {
             id: details.bankName,
             name: details.bankName,
@@ -55,7 +149,7 @@ export const useTransaction = () => {
             icon: ''
         };
         setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'FINANCING_OFFERS' }));
-    }
+    };
 
     const startPayment = () => {
         setState(prev => ({ ...prev, step: 'PAYMENT_SIMULATION' }));
@@ -71,7 +165,7 @@ export const useTransaction = () => {
 
     const skipInsurance = () => {
         setState(prev => ({ ...prev, step: 'OWNERSHIP_TRANSFER' }));
-    }
+    };
 
     const completeOwnershipTransfer = () => {
         setState(prev => ({ ...prev, ownershipTransferVerified: true, step: 'COMPLETE' }));
@@ -79,28 +173,39 @@ export const useTransaction = () => {
 
     const reset = () => {
         setState({
-            step: 'VEHICLE_LOOKUP',
-            role: 'BUYER',
+            step: 'ROLE_SELECT',
+            role: null,
             vehicle: null,
+            pricing: null,
+            ownerCount: 0,
+            mileage: 0,
             price: 0,
             userBank: null,
             buyerDetails: null,
             sellerDetails: null,
             paymentVerified: false,
             ownershipTransferVerified: false,
-        })
-    }
+            sellerPhone: '',
+            sellerIdNumber: '',
+            currentRequestId: null,
+            approvedRequest: null,
+        });
+    };
 
     return {
         state,
-        setVehicle,
-        setSellerDetails,
+        selectRole,
+        setVehicleForBuyer,
+        submitSellerLink,
+        onBuyerApproved,
+        registerSeller,
+        sellerApproveRequest,
         setBuyerDetails,
         startPayment,
         completePayment,
         skipFinancing,
         skipInsurance,
         completeOwnershipTransfer,
-        reset
+        reset,
     };
 };

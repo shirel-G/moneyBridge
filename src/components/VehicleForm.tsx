@@ -6,6 +6,14 @@ import { useTranslation } from 'react-i18next';
 
 interface VehicleFormProps {
     onVehicleVerified: (vehicle: VehicleDetails, price: number) => void;
+    /** Buyer mode: show pricing but no sale price input, callback with pricing data */
+    buyerMode?: boolean;
+    onBuyerContinue?: (
+        vehicle: VehicleDetails,
+        pricing: { minPrice: number; maxPrice: number; avgPrice: number },
+        ownerCount: number,
+        mileage: number
+    ) => void;
 }
 
 // Base prices by make (in ILS)
@@ -64,7 +72,7 @@ const calculateLeviYitzchakPrice = (
     return { minPrice, maxPrice, avgPrice };
 };
 
-export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified }) => {
+export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified, buyerMode, onBuyerContinue }) => {
     const { t } = useTranslation();
     const [plate, setPlate] = useState('');
     const [loading, setLoading] = useState(false);
@@ -130,17 +138,19 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified }) =
             const timer = setTimeout(() => {
                 setLoadingPrice(false);
                 setShowPricing(true);
-                // Auto-fill average price as suggestion
-                if (pricing) {
+                // Auto-fill average price as suggestion (only in seller mode)
+                if (pricing && !buyerMode) {
                     setPrice(pricing.avgPrice.toString());
                 }
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [vehicle, ownerCount, mileage, pricing]);
+    }, [vehicle, ownerCount, mileage, pricing, buyerMode]);
 
     const handleContinue = () => {
-        if (vehicle && price) {
+        if (buyerMode && vehicle && pricing && onBuyerContinue) {
+            onBuyerContinue(vehicle, pricing, ownerCount, parseInt(mileage));
+        } else if (vehicle && price) {
             onVehicleVerified(vehicle, parseInt(price));
         }
     };
@@ -148,6 +158,8 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified }) =
     const formatPrice = (num: number) => {
         return num.toLocaleString('he-IL');
     };
+
+    const canContinue = buyerMode ? showPricing : (!!price && showPricing);
 
     return (
         <div className="space-y-6">
@@ -208,8 +220,8 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified }) =
                                                 setShowPricing(false);
                                             }}
                                             className={`py-3 px-4 rounded-xl font-bold text-lg transition-all ${ownerCount === num
-                                                    ? 'bg-banking-blue text-white shadow-lg shadow-blue-200'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                ? 'bg-banking-blue text-white shadow-lg shadow-blue-200'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                                 }`}
                                         >
                                             {t('hand')} {num === 4 ? '4+' : num}
@@ -297,37 +309,39 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onVehicleVerified }) =
                                         </div>
                                     </div>
 
-                                    {/* Sale Price Input */}
-                                    <div className="mt-5">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('your_sale_price')} (₪)</label>
-                                        <input
-                                            type="number"
-                                            value={price}
-                                            onChange={(e) => setPrice(e.target.value)}
-                                            className="block w-full text-xl font-medium p-3 rounded-xl border-2 border-green-300 focus:border-green-500 outline-none transition-all bg-green-50"
-                                            placeholder={pricing.avgPrice.toString()}
-                                        />
-                                        {price && parseInt(price) > pricing.maxPrice && (
-                                            <p className="text-orange-600 text-sm mt-2 flex items-center gap-1">
-                                                <Info className="w-4 h-4" />
-                                                {t('price_above_market')}
-                                            </p>
-                                        )}
-                                        {price && parseInt(price) < pricing.minPrice && (
-                                            <p className="text-blue-600 text-sm mt-2 flex items-center gap-1">
-                                                <Info className="w-4 h-4" />
-                                                {t('price_below_market')}
-                                            </p>
-                                        )}
-                                    </div>
+                                    {/* Sale Price Input - ONLY in seller mode */}
+                                    {!buyerMode && (
+                                        <div className="mt-5">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('your_sale_price')} (₪)</label>
+                                            <input
+                                                type="number"
+                                                value={price}
+                                                onChange={(e) => setPrice(e.target.value)}
+                                                className="block w-full text-xl font-medium p-3 rounded-xl border-2 border-green-300 focus:border-green-500 outline-none transition-all bg-green-50"
+                                                placeholder={pricing.avgPrice.toString()}
+                                            />
+                                            {price && parseInt(price) > pricing.maxPrice && (
+                                                <p className="text-orange-600 text-sm mt-2 flex items-center gap-1">
+                                                    <Info className="w-4 h-4" />
+                                                    {t('price_above_market')}
+                                                </p>
+                                            )}
+                                            {price && parseInt(price) < pricing.minPrice && (
+                                                <p className="text-blue-600 text-sm mt-2 flex items-center gap-1">
+                                                    <Info className="w-4 h-4" />
+                                                    {t('price_below_market')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
                         <button
                             onClick={handleContinue}
-                            disabled={!price || !showPricing}
-                            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition-all shadow-lg active:scale-95 ${price && showPricing ? 'bg-banking-blue text-white shadow-blue-200' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            disabled={!canContinue}
+                            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition-all shadow-lg active:scale-95 ${canContinue ? 'bg-banking-blue text-white shadow-blue-200' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
                         >
                             {t('continue')}
                         </button>

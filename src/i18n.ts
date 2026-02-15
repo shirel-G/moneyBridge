@@ -139,7 +139,40 @@ const resources = {
             "skip_financing": "Skip Financing",
             "choose_offer": "Choose Offer",
             "approval_high": "High Approval Chance",
-            "approval_medium": "Medium Approval Chance"
+            "approval_medium": "Medium Approval Chance",
+            // Role Selection
+            "select_role_subtitle": "Are you buying or selling?",
+            "i_am_buyer": "I'm a Buyer",
+            "i_am_seller": "I'm a Seller",
+            "buyer_desc": "Looking to purchase a vehicle",
+            "seller_desc": "Selling my vehicle",
+            // Buyer Flow
+            "vehicle_lookup_title": "Find Your Vehicle",
+            "buyer_vehicle_title": "Enter Vehicle Details",
+            "buyer_vehicle_subtitle": "Enter the license plate of the vehicle you want to buy",
+            "link_seller_title": "Connect with Seller",
+            "link_seller_subtitle": "Enter the seller's phone number and ID",
+            "seller_phone": "Seller's Phone Number",
+            "seller_id": "Seller's ID Number",
+            "send_request": "Send Request to Seller",
+            "enter_your_phone": "Enter Your Phone",
+            "buyer_phone_desc": "We need your phone number to contact you",
+            // Waiting & Approval
+            "waiting_approval_title": "Waiting for Seller",
+            "waiting_approval_subtitle": "Your request has been sent. Waiting for the seller to approve...",
+            "request_approved": "Request Approved!",
+            "proceeding": "Proceeding to next step...",
+            // Seller Flow
+            "seller_register_title": "Seller Registration",
+            "seller_register_subtitle": "Enter your details to start receiving buyer requests",
+            "pending_requests_title": "Incoming Requests",
+            "pending_requests_subtitle": "Buyer requests will appear here",
+            "no_requests_yet": "No requests yet",
+            "waiting_for_buyer": "Waiting for a buyer to reach out...",
+            "approve": "Approve",
+            "reject": "Reject",
+            "seller_done_title": "Request Approved!",
+            "seller_done_msg": "You've approved the buyer's request. The transaction can proceed."
         }
     },
     he: {
@@ -279,7 +312,40 @@ const resources = {
             "skip_financing": "דלג על מימון",
             "choose_offer": "בחר הצעה",
             "approval_high": "סיכוי גבוה לאישור",
-            "approval_medium": "סיכוי בינוני לאישור"
+            "approval_medium": "סיכוי בינוני לאישור",
+            // Role Selection
+            "select_role_subtitle": "אתה קונה או מוכר?",
+            "i_am_buyer": "אני קונה",
+            "i_am_seller": "אני מוכר",
+            "buyer_desc": "מחפש לרכוש רכב",
+            "seller_desc": "מוכר את הרכב שלי",
+            // Buyer Flow
+            "vehicle_lookup_title": "חיפוש רכב",
+            "buyer_vehicle_title": "הזנת פרטי רכב",
+            "buyer_vehicle_subtitle": "הזן את מספר הרכב שברצונך לקנות",
+            "link_seller_title": "חיבור למוכר",
+            "link_seller_subtitle": "הזן את מספר הטלפון ותעודת הזהות של המוכר",
+            "seller_phone": "מספר טלפון של המוכר",
+            "seller_id": "מספר תעודת זהות של המוכר",
+            "send_request": "שלח בקשה למוכר",
+            "enter_your_phone": "הזן את מספר הטלפון שלך",
+            "buyer_phone_desc": "אנחנו צריכים את מספר הטלפון שלך ליצירת קשר",
+            // Waiting & Approval
+            "waiting_approval_title": "ממתין למוכר",
+            "waiting_approval_subtitle": "הבקשה נשלחה. ממתינים לאישור המוכר...",
+            "request_approved": "הבקשה אושרה!",
+            "proceeding": "ממשיכים לשלב הבא...",
+            // Seller Flow
+            "seller_register_title": "רישום מוכר",
+            "seller_register_subtitle": "הזן את הפרטים שלך כדי להתחיל לקבל פניות מקונים",
+            "pending_requests_title": "פניות נכנסות",
+            "pending_requests_subtitle": "פניות מקונים יופיעו כאן",
+            "no_requests_yet": "אין פניות עדיין",
+            "waiting_for_buyer": "ממתין לפניה מקונה...",
+            "approve": "אישור",
+            "reject": "דחייה",
+            "seller_done_title": "הבקשה אושרה!",
+            "seller_done_msg": "אישרת את בקשת הקונה. העסקה יכולה להמשיך."
         }
     },
     ru: {
@@ -359,7 +425,37 @@ const resources = {
             // Trims
             "hybrid_sun": "Hybrid Sun", "elite": "Elite", "performance": "Performance", "gt_line": "GT Line",
             "executive": "Executive", "sun": "Sun", "style": "Style", "premium": "Premium",
-            "exclusive": "Exclusive", "pure": "Pure", "tech": "Tech", "urban": "Urban", "standard": "Standard"
+            "exclusive": "Exclusive", "pure": "Pure", "tech": "Tech", "urban": "Urban", "standard": "Standard",
+            // Role Selection
+            "select_role_subtitle": "Вы покупатель или продавец?",
+            "i_am_buyer": "Я покупатель",
+            "i_am_seller": "Я продавец",
+            "buyer_desc": "Ищу автомобиль для покупки",
+            "seller_desc": "Продаю свой автомобиль",
+            "vehicle_lookup_title": "Поиск автомобиля",
+            "buyer_vehicle_title": "Данные автомобиля",
+            "buyer_vehicle_subtitle": "Введите номер автомобиля",
+            "link_seller_title": "Связь с продавцом",
+            "link_seller_subtitle": "Введите телефон и удостоверение продавца",
+            "seller_phone": "Телефон продавца",
+            "seller_id": "Удостоверение продавца",
+            "send_request": "Отправить запрос",
+            "enter_your_phone": "Введите ваш телефон",
+            "buyer_phone_desc": "Нам нужен ваш телефон для связи",
+            "waiting_approval_title": "Ожидание продавца",
+            "waiting_approval_subtitle": "Запрос отправлен. Ожидание подтверждения...",
+            "request_approved": "Запрос одобрен!",
+            "proceeding": "Переход к следующему шагу...",
+            "seller_register_title": "Регистрация продавца",
+            "seller_register_subtitle": "Введите данные для получения запросов",
+            "pending_requests_title": "Входящие запросы",
+            "pending_requests_subtitle": "Запросы покупателей появятся здесь",
+            "no_requests_yet": "Запросов пока нет",
+            "waiting_for_buyer": "Ожидание покупателя...",
+            "approve": "Одобрить",
+            "reject": "Отклонить",
+            "seller_done_title": "Запрос одобрен!",
+            "seller_done_msg": "Вы одобрили запрос покупателя."
         }
     },
     ar: {
@@ -439,7 +535,37 @@ const resources = {
             // Trims
             "hybrid_sun": "هايبرد صن", "elite": "إيليت", "performance": "بيرفورمانس", "gt_line": "جي تي لاين",
             "executive": "اكزيكتيف", "sun": "صن", "style": "ستايل", "premium": "بريميوم",
-            "exclusive": "اكسكلوسيف", "pure": "بيور", "tech": "تك", "urban": "ايربان", "standard": "ستاندرد"
+            "exclusive": "اكسكلوسيف", "pure": "بيور", "tech": "تك", "urban": "ايربان", "standard": "ستاندرد",
+            // Role Selection
+            "select_role_subtitle": "هل أنت مشتري أم بائع؟",
+            "i_am_buyer": "أنا مشتري",
+            "i_am_seller": "أنا بائع",
+            "buyer_desc": "أبحث عن سيارة لشرائها",
+            "seller_desc": "أبيع سيارتي",
+            "vehicle_lookup_title": "البحث عن مركبة",
+            "buyer_vehicle_title": "بيانات المركبة",
+            "buyer_vehicle_subtitle": "أدخل رقم لوحة المركبة",
+            "link_seller_title": "الاتصال بالبائع",
+            "link_seller_subtitle": "أدخل رقم هاتف وهوية البائع",
+            "seller_phone": "رقم هاتف البائع",
+            "seller_id": "رقم هوية البائع",
+            "send_request": "إرسال الطلب",
+            "enter_your_phone": "أدخل رقم هاتفك",
+            "buyer_phone_desc": "نحتاج رقم هاتفك للتواصل",
+            "waiting_approval_title": "في انتظار البائع",
+            "waiting_approval_subtitle": "تم إرسال الطلب. في انتظار موافقة البائع...",
+            "request_approved": "تمت الموافقة!",
+            "proceeding": "الانتقال إلى الخطوة التالية...",
+            "seller_register_title": "تسجيل البائع",
+            "seller_register_subtitle": "أدخل بياناتك لتلقي طلبات المشترين",
+            "pending_requests_title": "الطلبات الواردة",
+            "pending_requests_subtitle": "ستظهر طلبات المشترين هنا",
+            "no_requests_yet": "لا توجد طلبات بعد",
+            "waiting_for_buyer": "في انتظار مشتري...",
+            "approve": "موافقة",
+            "reject": "رفض",
+            "seller_done_title": "تمت الموافقة!",
+            "seller_done_msg": "لقد وافقت على طلب المشتري."
         }
     }
 };
