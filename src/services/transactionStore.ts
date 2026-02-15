@@ -1,6 +1,5 @@
 /**
  * Firebase-backed transaction store for real-time cross-device communication.
- * Replaces the previous in-memory store.
  */
 
 import { database } from './firebaseConfig';
@@ -34,7 +33,10 @@ export interface TransactionRequest {
     pricing: { minPrice: number; maxPrice: number; avgPrice: number };
     ownerCount: number;
     mileage: number;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'price_set' | 'price_confirmed' | 'paid' | 'transferred' | 'completed' | 'rejected';
+    agreedPrice: number | null;
+    paymentComplete: boolean;
+    transferComplete: boolean;
     createdAt: number;
 }
 
@@ -56,7 +58,7 @@ export async function isSellerRegistered(phone: string, idNumber: string): Promi
 // --- Transaction Requests ---
 
 export async function createRequest(
-    req: Omit<TransactionRequest, 'id' | 'status' | 'createdAt'>
+    req: Omit<TransactionRequest, 'id' | 'status' | 'createdAt' | 'agreedPrice' | 'paymentComplete' | 'transferComplete'>
 ): Promise<TransactionRequest> {
     const requestsRef = ref(database, 'requests');
     const newRef = push(requestsRef);
@@ -64,6 +66,9 @@ export async function createRequest(
         ...req,
         id: newRef.key!,
         status: 'pending',
+        agreedPrice: null,
+        paymentComplete: false,
+        transferComplete: false,
         createdAt: Date.now(),
     };
     await set(newRef, request);
@@ -78,11 +83,33 @@ export async function rejectRequest(id: string): Promise<void> {
     await update(ref(database, `requests/${id}`), { status: 'rejected' });
 }
 
+export async function setAgreedPrice(id: string, price: number): Promise<void> {
+    await update(ref(database, `requests/${id}`), {
+        agreedPrice: price,
+        status: 'price_set',
+    });
+}
+
+export async function confirmPrice(id: string): Promise<void> {
+    await update(ref(database, `requests/${id}`), { status: 'price_confirmed' });
+}
+
+export async function markPaymentComplete(id: string): Promise<void> {
+    await update(ref(database, `requests/${id}`), {
+        paymentComplete: true,
+        status: 'paid',
+    });
+}
+
+export async function markTransferComplete(id: string): Promise<void> {
+    await update(ref(database, `requests/${id}`), {
+        transferComplete: true,
+        status: 'completed',
+    });
+}
+
 // --- Real-Time Listeners ---
 
-/**
- * Subscribe to a single request by ID. Returns unsubscribe function.
- */
 export function subscribeToRequest(
     requestId: string,
     callback: (request: TransactionRequest | null) => void
@@ -97,17 +124,11 @@ export function subscribeToRequest(
     });
 }
 
-/**
- * Subscribe to all requests for a specific seller (by phone + ID).
- * Uses a composite index field for querying.
- */
 export function subscribeToSellerRequests(
     sellerPhone: string,
     sellerIdNumber: string,
     callback: (requests: TransactionRequest[]) => void
 ): Unsubscribe {
-    // We query by sellerPhone and then filter by sellerIdNumber client-side
-    // because Firebase RTDB only supports single-field queries.
     const requestsRef = query(
         ref(database, 'requests'),
         orderByChild('sellerPhone'),

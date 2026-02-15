@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 
@@ -15,37 +14,28 @@ interface UserDetails {
 interface UserDetailsFormProps {
     role: 'BUYER' | 'SELLER';
     onSubmit: (details: UserDetails) => void;
+    prefillPhone?: string;
 }
 
-export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({ role, onSubmit }) => {
+export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({ role, onSubmit, prefillPhone }) => {
     const { t } = useTranslation();
     const [details, setDetails] = useState<UserDetails>({
         fullName: '',
         idNumber: '',
-        phoneNumber: '',
+        phoneNumber: prefillPhone || '',
         bankName: '',
         branch: '',
         accountNumber: ''
     });
-    const [otp, setOtp] = useState('');
-    const [showOtp, setShowOtp] = useState(false);
 
     const handleChange = (field: keyof UserDetails, value: string) => {
         setDetails(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleOtpChange = (value: string) => {
-        const clean = value.replace(/\D/g, '').slice(0, 4);
-        setOtp(clean);
-        if (clean.length === 4) {
-            setTimeout(() => {
-                onSubmit(details);
-            }, 500);
+    const handleSubmit = () => {
+        if (isValid) {
+            onSubmit(details);
         }
-    };
-
-    const handleSendCode = () => {
-        setShowOtp(true);
     };
 
     const isValid =
@@ -55,45 +45,6 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({ role, onSubmit
         details.bankName &&
         details.branch.length >= 2 &&
         details.accountNumber.length >= 6;
-
-    if (showOtp) {
-        return (
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center space-y-6">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-banking-blue mb-4">
-                    <MessageSquare className="w-8 h-8" />
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('enter_verification_code')}</h2>
-                    <p className="text-gray-500">
-                        {t('code_sent_to')} <span className="font-semibold text-gray-900">{details.phoneNumber}</span>
-                    </p>
-                </div>
-
-                <div className="relative">
-                    <div className="flex justify-center gap-3 my-6">
-                        {[0, 1, 2, 3].map((i) => (
-                            <div key={i} className="w-12 h-14 border-2 rounded-xl flex items-center justify-center text-2xl font-bold border-gray-200 bg-gray-50 text-gray-900">
-                                {otp[i] || ''}
-                            </div>
-                        ))}
-                    </div>
-
-                    <input
-                        type="tel"
-                        autoFocus
-                        value={otp}
-                        onChange={(e) => handleOtpChange(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        maxLength={4}
-                        placeholder="____"
-                    />
-                </div>
-
-                <p className="text-sm text-gray-400">{t('enter_any_code')}</p>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">
@@ -134,8 +85,14 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({ role, onSubmit
                         <input
                             type="tel"
                             value={details.phoneNumber}
-                            onChange={(e) => handleChange('phoneNumber', e.target.value)}
-                            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-banking-blue focus:outline-none transition-colors"
+                            onChange={prefillPhone ? undefined : (e) => handleChange('phoneNumber', e.target.value)}
+                            readOnly={!!prefillPhone}
+                            className={clsx(
+                                "w-full p-3 border-2 rounded-xl transition-colors",
+                                prefillPhone
+                                    ? "border-gray-100 bg-gray-50 text-gray-600 cursor-not-allowed"
+                                    : "border-gray-200 focus:border-banking-blue focus:outline-none"
+                            )}
                             placeholder="050-1234567"
                         />
                     </div>
@@ -190,7 +147,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({ role, onSubmit
             </div>
 
             <button
-                onClick={handleSendCode}
+                onClick={handleSubmit}
                 disabled={!isValid}
                 className={clsx(
                     "w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg active:scale-95",

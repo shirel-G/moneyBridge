@@ -3,6 +3,10 @@ import type { VehicleDetails, BankDetails } from '../services/mockServices';
 import {
     createRequest,
     registerSeller as firebaseRegisterSeller,
+    setAgreedPrice as firebaseSetAgreedPrice,
+    confirmPrice as firebaseConfirmPrice,
+    markPaymentComplete as firebaseMarkPaymentComplete,
+    markTransferComplete as firebaseMarkTransferComplete,
     type TransactionRequest,
 } from '../services/transactionStore';
 
@@ -12,16 +16,19 @@ export type TransactionStep =
     | 'BUYER_VEHICLE_LOOKUP'
     | 'BUYER_ENTER_SELLER'
     | 'BUYER_WAITING_APPROVAL'
-    | 'BUYER_DETAILS'
+    | 'BUYER_CONFIRM_PRICE'
+    | 'BUYER_BANK_DETAILS'
+    | 'BUYER_FINANCING'
+    | 'BUYER_DEPOSIT'
+    | 'BUYER_PAYMENT'
+    | 'BUYER_WAITING_TRANSFER'
     // Seller steps
     | 'SELLER_REGISTER'
     | 'SELLER_PENDING_REQUESTS'
-    // Shared steps (after approval)
-    | 'FINANCING_OFFERS'
-    | 'DEPOSIT_INSTRUCTIONS'
-    | 'PAYMENT_SIMULATION'
-    | 'INSURANCE_OFFERS'
-    | 'OWNERSHIP_TRANSFER'
+    | 'SELLER_SET_PRICE'
+    | 'SELLER_WAITING_PAYMENT'
+    | 'SELLER_OWNERSHIP_TRANSFER'
+    // Shared
     | 'COMPLETE';
 
 interface TransactionState {
@@ -37,6 +44,8 @@ interface TransactionState {
     sellerDetails: any | null;
     paymentVerified: boolean;
     ownershipTransferVerified: boolean;
+    // Buyer phone (from OTP step — saved for pre-fill)
+    buyerPhone: string;
     // Seller-side state
     sellerPhone: string;
     sellerIdNumber: string;
@@ -59,6 +68,7 @@ export const useTransaction = () => {
         sellerDetails: null,
         paymentVerified: false,
         ownershipTransferVerified: false,
+        buyerPhone: '',
         sellerPhone: '',
         sellerIdNumber: '',
         currentRequestId: null,
@@ -92,6 +102,11 @@ export const useTransaction = () => {
         }));
     };
 
+    // Save buyer phone from OTP verification
+    const setBuyerPhoneVerified = (phone: string) => {
+        setState(prev => ({ ...prev, buyerPhone: phone }));
+    };
+
     const submitSellerLink = async (sellerPhone: string, sellerIdNumber: string, buyerPhone: string) => {
         if (!state.vehicle || !state.pricing) return;
 
@@ -113,12 +128,66 @@ export const useTransaction = () => {
         }));
     };
 
+    // After seller approves → buyer goes to CONFIRM PRICE (wait for seller to set price)
     const onBuyerApproved = useCallback((request: TransactionRequest) => {
         setState(prev => ({
             ...prev,
             approvedRequest: request,
-            price: request.pricing.avgPrice,
-            step: 'BUYER_DETAILS',
+            currentRequestId: request.id,
+            step: 'BUYER_CONFIRM_PRICE',
+        }));
+    }, []);
+
+    // After buyer confirms price → go to bank details
+    const buyerConfirmPrice = async (request: TransactionRequest) => {
+        await firebaseConfirmPrice(request.id);
+        setState(prev => ({
+            ...prev,
+            approvedRequest: request,
+            price: request.agreedPrice || request.pricing.avgPrice,
+            step: 'BUYER_BANK_DETAILS',
+        }));
+    };
+
+    // After buyer fills bank details → go to financing offers
+    const setBuyerDetails = (details: any) => {
+        const userBank: BankDetails = {
+            id: details.bankName,
+            name: details.bankName,
+            code: '',
+            icon: ''
+        };
+        setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'BUYER_FINANCING' }));
+    };
+
+    // Financing → deposit
+    const skipFinancing = () => {
+        setState(prev => ({ ...prev, step: 'BUYER_DEPOSIT' }));
+    };
+
+    // Go to payment
+    const startPayment = () => {
+        setState(prev => ({ ...prev, step: 'BUYER_PAYMENT' }));
+    };
+
+    // After payment → mark in Firebase + wait for seller transfer
+    const completePayment = async () => {
+        if (state.currentRequestId) {
+            await firebaseMarkPaymentComplete(state.currentRequestId);
+        }
+        setState(prev => ({
+            ...prev,
+            paymentVerified: true,
+            step: 'BUYER_WAITING_TRANSFER',
+        }));
+    };
+
+    // After seller completes transfer → buyer done
+    const onTransferComplete = useCallback(() => {
+        setState(prev => ({
+            ...prev,
+            ownershipTransferVerified: true,
+            step: 'COMPLETE',
         }));
     }, []);
 
@@ -133,46 +202,47 @@ export const useTransaction = () => {
         }));
     };
 
+    // After seller approves request → go to SET PRICE (not complete!)
     const sellerApproveRequest = (request: TransactionRequest) => {
         setState(prev => ({
             ...prev,
             approvedRequest: request,
             vehicle: request.vehicle,
             pricing: request.pricing,
-            price: request.pricing.avgPrice,
-            step: 'COMPLETE',
+            currentRequestId: request.id,
+            step: 'SELLER_SET_PRICE',
         }));
     };
 
-    // --- Existing Shared Steps ---
-    const setBuyerDetails = (details: any) => {
-        const userBank: BankDetails = {
-            id: details.bankName,
-            name: details.bankName,
-            code: '',
-            icon: ''
-        };
-        setState(prev => ({ ...prev, buyerDetails: details, userBank, step: 'FINANCING_OFFERS' }));
+    // Seller sets agreed price → wait for payment
+    const sellerSetPrice = async (price: number) => {
+        if (!state.currentRequestId) return;
+        await firebaseSetAgreedPrice(state.currentRequestId, price);
+        setState(prev => ({
+            ...prev,
+            price,
+            step: 'SELLER_WAITING_PAYMENT',
+        }));
     };
 
-    const startPayment = () => {
-        setState(prev => ({ ...prev, step: 'PAYMENT_SIMULATION' }));
-    };
+    // Payment received → seller does ownership transfer
+    const onPaymentReceived = useCallback((_request: TransactionRequest) => {
+        setState(prev => ({
+            ...prev,
+            step: 'SELLER_OWNERSHIP_TRANSFER',
+        }));
+    }, []);
 
-    const completePayment = () => {
-        setState(prev => ({ ...prev, paymentVerified: true, step: 'INSURANCE_OFFERS' }));
-    };
-
-    const skipFinancing = () => {
-        setState(prev => ({ ...prev, step: 'DEPOSIT_INSTRUCTIONS' }));
-    };
-
-    const skipInsurance = () => {
-        setState(prev => ({ ...prev, step: 'OWNERSHIP_TRANSFER' }));
-    };
-
-    const completeOwnershipTransfer = () => {
-        setState(prev => ({ ...prev, ownershipTransferVerified: true, step: 'COMPLETE' }));
+    // Seller completes ownership transfer → mark in Firebase + done
+    const sellerCompleteTransfer = async () => {
+        if (state.currentRequestId) {
+            await firebaseMarkTransferComplete(state.currentRequestId);
+        }
+        setState(prev => ({
+            ...prev,
+            ownershipTransferVerified: true,
+            step: 'COMPLETE',
+        }));
     };
 
     const reset = () => {
@@ -189,6 +259,7 @@ export const useTransaction = () => {
             sellerDetails: null,
             paymentVerified: false,
             ownershipTransferVerified: false,
+            buyerPhone: '',
             sellerPhone: '',
             sellerIdNumber: '',
             currentRequestId: null,
@@ -200,16 +271,20 @@ export const useTransaction = () => {
         state,
         selectRole,
         setVehicleForBuyer,
+        setBuyerPhoneVerified,
         submitSellerLink,
         onBuyerApproved,
-        registerSeller,
-        sellerApproveRequest,
+        buyerConfirmPrice,
         setBuyerDetails,
+        skipFinancing,
         startPayment,
         completePayment,
-        skipFinancing,
-        skipInsurance,
-        completeOwnershipTransfer,
+        onTransferComplete,
+        registerSeller,
+        sellerApproveRequest,
+        sellerSetPrice,
+        onPaymentReceived,
+        sellerCompleteTransfer,
         reset,
     };
 };

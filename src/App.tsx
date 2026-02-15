@@ -4,13 +4,16 @@ import { RoleSelect } from './components/RoleSelect';
 import { VehicleForm } from './components/VehicleForm';
 import { BuyerSellerLink } from './components/BuyerSellerLink';
 import { BuyerWaiting } from './components/BuyerWaiting';
+import { BuyerConfirmPrice } from './components/BuyerConfirmPrice';
+import { BuyerWaitingTransfer } from './components/BuyerWaitingTransfer';
 import { SellerRegister } from './components/SellerRegister';
 import { SellerRequests } from './components/SellerRequests';
+import { SellerSetPrice } from './components/SellerSetPrice';
+import { SellerWaitingPayment } from './components/SellerWaitingPayment';
 import { UserDetailsForm } from './components/UserDetailsForm';
 import { EscrowDetails } from './components/EscrowDetails';
 import { PaymentSimulator } from './components/PaymentSimulator';
 import { FinancingOffers } from './components/FinancingOffers';
-import { InsuranceOffers } from './components/InsuranceOffers';
 import { OwnershipTransfer } from './components/OwnershipTransfer';
 import { useTransaction } from './hooks/useTransaction';
 import { CheckCircle2, MessageSquare } from 'lucide-react';
@@ -20,8 +23,7 @@ import { clsx } from 'clsx';
 function App() {
   const { t } = useTranslation();
 
-  // Buyer phone verification state
-  const [buyerPhone, setBuyerPhone] = useState('');
+  // Buyer phone verification state (local to App — stored once, reused)
   const [buyerPhoneInput, setBuyerPhoneInput] = useState('');
   const [showBuyerOtp, setShowBuyerOtp] = useState(false);
   const [buyerOtp, setBuyerOtp] = useState('');
@@ -30,16 +32,20 @@ function App() {
     state,
     selectRole,
     setVehicleForBuyer,
+    setBuyerPhoneVerified,
     submitSellerLink,
     onBuyerApproved,
-    registerSeller,
-    sellerApproveRequest,
+    buyerConfirmPrice,
     setBuyerDetails,
+    skipFinancing,
     startPayment,
     completePayment,
-    skipFinancing,
-    skipInsurance,
-    completeOwnershipTransfer,
+    onTransferComplete,
+    registerSeller,
+    sellerApproveRequest,
+    sellerSetPrice,
+    onPaymentReceived,
+    sellerCompleteTransfer,
     reset,
   } = useTransaction();
 
@@ -49,21 +55,23 @@ function App() {
       case 'BUYER_VEHICLE_LOOKUP': return t('vehicle_lookup_title');
       case 'BUYER_ENTER_SELLER': return t('link_seller_title');
       case 'BUYER_WAITING_APPROVAL': return t('waiting_approval_title');
-      case 'BUYER_DETAILS': return t('setup_buyer');
+      case 'BUYER_CONFIRM_PRICE': return t('confirm_price_title');
+      case 'BUYER_BANK_DETAILS': return t('setup_buyer');
+      case 'BUYER_FINANCING': return t('financing_title');
+      case 'BUYER_DEPOSIT': return t('deposit_title');
+      case 'BUYER_PAYMENT': return t('payment_title');
+      case 'BUYER_WAITING_TRANSFER': return t('waiting_transfer_title');
       case 'SELLER_REGISTER': return t('seller_register_title');
       case 'SELLER_PENDING_REQUESTS': return t('pending_requests_title');
-      case 'DEPOSIT_INSTRUCTIONS': return t('deposit_title');
-      case 'FINANCING_OFFERS': return t('financing_title');
-      case 'INSURANCE_OFFERS': return t('insurance_title');
-      case 'OWNERSHIP_TRANSFER': return t('ownership_transfer');
-      case 'COMPLETE': return state.role === 'SELLER' ? t('request_approved') : t('success_title');
+      case 'SELLER_SET_PRICE': return t('set_price_title');
+      case 'SELLER_WAITING_PAYMENT': return t('waiting_payment_title');
+      case 'SELLER_OWNERSHIP_TRANSFER': return t('ownership_transfer');
+      case 'COMPLETE': return t('success_title');
       default: return "Money Bridge";
     }
   };
 
   const handleBack = () => {
-    // Reset to beginning
-    setBuyerPhone('');
     setBuyerPhoneInput('');
     setShowBuyerOtp(false);
     setBuyerOtp('');
@@ -81,16 +89,15 @@ function App() {
     const clean = value.replace(/\D/g, '').slice(0, 4);
     setBuyerOtp(clean);
     if (clean.length === 4) {
-      // OTP verified — set the phone and proceed
       setTimeout(() => {
-        setBuyerPhone(buyerPhoneInput);
+        setBuyerPhoneVerified(buyerPhoneInput);
       }, 500);
     }
   };
 
   const renderActionButton = () => {
     switch (state.step) {
-      case 'DEPOSIT_INSTRUCTIONS':
+      case 'BUYER_DEPOSIT':
         return (
           <button
             onClick={startPayment}
@@ -119,12 +126,14 @@ function App() {
       actionButton={renderActionButton()}
       onBack={state.step !== 'ROLE_SELECT' && state.step !== 'COMPLETE' ? handleBack : undefined}
     >
-      {/* Role Selection */}
+      {/* ===== ROLE SELECTION ===== */}
       {state.step === 'ROLE_SELECT' && (
         <RoleSelect onSelectRole={selectRole} />
       )}
 
       {/* ===== BUYER FLOW ===== */}
+
+      {/* 1. Vehicle lookup */}
       {state.step === 'BUYER_VEHICLE_LOOKUP' && (
         <div className="space-y-6">
           <div className="text-center py-4">
@@ -139,9 +148,10 @@ function App() {
         </div>
       )}
 
+      {/* 2. Phone OTP + Link Seller */}
       {state.step === 'BUYER_ENTER_SELLER' && (
         <div className="space-y-6">
-          {/* Show vehicle summary */}
+          {/* Vehicle summary */}
           {state.vehicle && (
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm">
               <div className="flex justify-between items-center">
@@ -159,8 +169,8 @@ function App() {
             </div>
           )}
 
-          {/* Buyer phone + OTP verification */}
-          {!buyerPhone ? (
+          {/* Phone verification → then seller link form */}
+          {!state.buyerPhone ? (
             <>
               {!showBuyerOtp ? (
                 <div className="space-y-4">
@@ -193,19 +203,16 @@ function App() {
                   </button>
                 </div>
               ) : (
-                /* OTP Verification Screen */
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center space-y-6">
                   <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600 mb-4">
                     <MessageSquare className="w-8 h-8" />
                   </div>
-
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('enter_verification_code')}</h2>
                     <p className="text-gray-500">
                       {t('code_sent_to')} <span className="font-semibold text-gray-900">{buyerPhoneInput}</span>
                     </p>
                   </div>
-
                   <div className="relative">
                     <div className="flex justify-center gap-3 my-6">
                       {[0, 1, 2, 3].map((i) => (
@@ -214,7 +221,6 @@ function App() {
                         </div>
                       ))}
                     </div>
-
                     <input
                       type="tel"
                       autoFocus
@@ -225,7 +231,6 @@ function App() {
                       placeholder="____"
                     />
                   </div>
-
                   <p className="text-sm text-gray-400">{t('enter_any_code')}</p>
                 </div>
               )}
@@ -233,13 +238,14 @@ function App() {
           ) : (
             <BuyerSellerLink
               onSubmit={(sellerPhone, sellerIdNumber) => {
-                submitSellerLink(sellerPhone, sellerIdNumber, buyerPhone);
+                submitSellerLink(sellerPhone, sellerIdNumber, state.buyerPhone);
               }}
             />
           )}
         </div>
       )}
 
+      {/* 3. Waiting for seller approval */}
       {state.step === 'BUYER_WAITING_APPROVAL' && state.currentRequestId && (
         <BuyerWaiting
           requestId={state.currentRequestId}
@@ -247,15 +253,57 @@ function App() {
         />
       )}
 
-      {state.step === 'BUYER_DETAILS' && (
-        <UserDetailsForm role="BUYER" onSubmit={setBuyerDetails} />
+      {/* 4. Confirm seller's price */}
+      {state.step === 'BUYER_CONFIRM_PRICE' && state.currentRequestId && (
+        <BuyerConfirmPrice
+          requestId={state.currentRequestId}
+          onConfirm={buyerConfirmPrice}
+          onReject={handleBack}
+        />
+      )}
+
+      {/* 5. Bank details (phone pre-filled, no OTP) */}
+      {state.step === 'BUYER_BANK_DETAILS' && (
+        <UserDetailsForm
+          role="BUYER"
+          onSubmit={setBuyerDetails}
+          prefillPhone={state.buyerPhone}
+        />
+      )}
+
+      {/* 6. Financing offers */}
+      {state.step === 'BUYER_FINANCING' && (
+        <FinancingOffers vehiclePrice={state.price} onContinue={skipFinancing} onSkip={skipFinancing} />
+      )}
+
+      {/* 7. Deposit instructions */}
+      {state.step === 'BUYER_DEPOSIT' && state.userBank && (
+        <div className="space-y-6">
+          <EscrowDetails userBank={state.userBank} price={state.price} onDetect={startPayment} />
+        </div>
+      )}
+
+      {/* 8. Payment */}
+      {state.step === 'BUYER_PAYMENT' && (
+        <PaymentSimulator onComplete={completePayment} />
+      )}
+
+      {/* 9. Waiting for seller to transfer ownership */}
+      {state.step === 'BUYER_WAITING_TRANSFER' && state.currentRequestId && (
+        <BuyerWaitingTransfer
+          requestId={state.currentRequestId}
+          onTransferComplete={onTransferComplete}
+        />
       )}
 
       {/* ===== SELLER FLOW ===== */}
+
+      {/* 1. Register */}
       {state.step === 'SELLER_REGISTER' && (
         <SellerRegister onRegister={registerSeller} />
       )}
 
+      {/* 2. Pending requests */}
       {state.step === 'SELLER_PENDING_REQUESTS' && (
         <SellerRequests
           sellerPhone={state.sellerPhone}
@@ -264,42 +312,36 @@ function App() {
         />
       )}
 
-      {/* ===== SHARED STEPS (buyer post-approval) ===== */}
-      {state.step === 'FINANCING_OFFERS' && (
-        <FinancingOffers vehiclePrice={state.price} onContinue={skipFinancing} onSkip={skipFinancing} />
+      {/* 3. Set agreed price */}
+      {state.step === 'SELLER_SET_PRICE' && state.approvedRequest && (
+        <SellerSetPrice
+          request={state.approvedRequest}
+          onSubmitPrice={sellerSetPrice}
+        />
       )}
 
-      {state.step === 'DEPOSIT_INSTRUCTIONS' && state.userBank && (
-        <div className="space-y-6">
-          <EscrowDetails userBank={state.userBank} price={state.price} onDetect={startPayment} />
-        </div>
+      {/* 4. Waiting for buyer payment */}
+      {state.step === 'SELLER_WAITING_PAYMENT' && state.currentRequestId && (
+        <SellerWaitingPayment
+          requestId={state.currentRequestId}
+          onPaymentReceived={onPaymentReceived}
+        />
       )}
 
-      {state.step === 'PAYMENT_SIMULATION' && (
-        <PaymentSimulator onComplete={completePayment} />
+      {/* 5. Ownership transfer */}
+      {state.step === 'SELLER_OWNERSHIP_TRANSFER' && (
+        <OwnershipTransfer onComplete={sellerCompleteTransfer} />
       )}
 
-      {state.step === 'INSURANCE_OFFERS' && (
-        <InsuranceOffers onContinue={skipInsurance} />
-      )}
-
-      {state.step === 'OWNERSHIP_TRANSFER' && (
-        <OwnershipTransfer onComplete={completeOwnershipTransfer} />
-      )}
-
-      {/* ===== COMPLETE ===== */}
+      {/* ===== COMPLETE (both roles) ===== */}
       {state.step === 'COMPLETE' && (
         <div className="flex flex-col items-center justify-center py-8 space-y-6 text-center animate-in fade-in zoom-in duration-500">
           <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center shadow-sm">
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {state.role === 'SELLER' ? t('seller_done_title') : t('success_title')}
-            </h2>
-            <p className="text-gray-500">
-              {state.role === 'SELLER' ? t('seller_done_msg') : t('success_msg')}
-            </p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('success_title')}</h2>
+            <p className="text-gray-500">{t('success_msg')}</p>
           </div>
           {state.vehicle && (
             <div className="bg-gray-50 p-6 rounded-3xl w-full text-left space-y-4 shadow-inner">
@@ -309,22 +351,18 @@ function App() {
                   {t(state.vehicle.make)} {t(state.vehicle.model)}
                 </span>
               </div>
-              {state.pricing && (
+              {state.price > 0 && (
                 <div className="flex justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-gray-500">{t('market_price')}</span>
-                  <span className="font-bold text-green-600">₪{state.pricing.avgPrice.toLocaleString('he-IL')}</span>
+                  <span className="text-gray-500">{t('agreed_price')}</span>
+                  <span className="font-bold text-green-600">₪{state.price.toLocaleString('he-IL')}</span>
                 </div>
               )}
-              {state.role === 'BUYER' && (
-                <>
-                  {state.buyerDetails && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{t('buyer')}</span>
-                      <span className="font-medium text-gray-900">{state.buyerDetails.fullName}</span>
-                    </div>
-                  )}
-                </>
-              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">{t('role_label')}</span>
+                <span className="font-medium text-gray-900">
+                  {state.role === 'BUYER' ? t('buyer') : t('seller')}
+                </span>
+              </div>
             </div>
           )}
         </div>
